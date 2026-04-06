@@ -20,7 +20,8 @@ import {
   Utensils,
   Plus,
   Minus,
-  ArrowRight
+  ArrowRight,
+  Users
 } from 'lucide-react';
 import { addToCart } from '../features/cartSlice';
 import api from '../api';
@@ -401,7 +402,7 @@ const Home = () => {
                 <div className="space-y-24">
                    {results.map((group, groupIdx) => (
                       <div key={groupIdx} className="space-y-8">
-                         <div className="flex items-center gap-3"><User className="w-4 h-4 text-primary" /> Owner: {group[0].restaurant_id?.ownerName || 'Restaurant Manager'}</div>
+                         <div className="flex items-center gap-3"><Users className="w-4 h-4 text-primary" /> Owner: {group[0].restaurant_id?.ownerName || 'Restaurant Manager'}</div>
                          <div className="flex items-center gap-4">
                             <h3 className="text-3xl font-black uppercase tracking-tighter">{group[0].name}</h3>
                             <div className="h-px flex-1 bg-border/50" />
@@ -531,7 +532,7 @@ const Home = () => {
                                     <h3 className="text-2xl font-black tracking-tight mb-4 uppercase truncate">{item.name}</h3>
                                     <div className="mt-auto flex items-center justify-between">
                                        <div className="flex flex-col">
-                                          <span className="text-2xl font-black tracking-tighter leading-none"><span className="text-primary mr-1">rs.</span>{item.price.toFixed(2)}</span>
+                                          <span className="text-2xl font-black tracking-tighter leading-none"><span className="text-primary mr-1">Rs.</span>{item.price.toFixed(2)}</span>
                                        </div>
                                        <div className="flex gap-2">
                                           <div className="w-10 h-10 rounded-full border border-primary/10 flex items-center justify-center opacity-30">

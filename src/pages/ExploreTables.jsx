@@ -165,7 +165,7 @@ const ExploreTables = () => {
 
             {/* Table Grid */}
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-10 px-6 lg:px-12 max-w-7xl mx-auto z-10 relative">
-                {tables.map(table => (
+                {tables.filter(table => table.status === 'Available').map(table => (
                     <Card key={table._id} className="table-card group relative rounded-[3.5rem] bg-secondary/30 border-primary/5 hover:border-primary/30 transition-all duration-700 overflow-hidden shadow-2xl backdrop-blur-md">
                         
                         <div className={`absolute top-0 right-0 w-32 h-32 blur-[60px] opacity-20 transition-all duration-700 ${table.status === 'Available' ? 'bg-primary' : 'bg-secondary'}`} />
@@ -204,8 +204,8 @@ const ExploreTables = () => {
                                     <Button 
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            console.log('Navigating to reserve-table with info:', table.profile_id);
-                                            navigate(`/reserve-table?restaurantId=${table.profile_id}&tableNumber=${table.tableNumber}`);
+                                            console.log('Navigating to reserve-table with info:', table.restaurant_id);
+                                            navigate(`/reserve-table?restaurantId=${table.restaurant_id}&tableNumber=${table.tableNumber}`);
                                         }}
                                         className="w-full h-16 bg-secondary/50 border border-primary/10 hover:bg-primary hover:text-black hover:border-primary rounded-[2rem] text-[11px] font-black uppercase tracking-widest shadow-xl flex items-center justify-between px-8 group/btn"
                                     >

@@ -85,7 +85,7 @@ const ReserveTable = () => {
                 liveLocation: location,
                 preOrderedItems: [] 
             });
-            toast.success("Spot secured! The admin has been notified.");
+            toast.success("Spot secured! The restaurant has been notified.");
             setSuccess(true);
         } catch (error) {
             toast.error(error.response?.data?.message || 'Booking request failed.');

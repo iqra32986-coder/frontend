@@ -188,36 +188,9 @@ const Cart = () => {
                                                     </div>
 
                                                     {/* Item Details */}
-                                                    <div className="flex-1 text-center md:text-left">
-                                                        <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                                                            <p className="text-xl font-black tracking-tight uppercase leading-none">{item.name}</p>
-                                                            {item.isDeal && <Badge className="bg-primary/20 text-primary border-primary/20 text-[8px] font-black uppercase">Special Offer</Badge>}
-                                                        </div>
-                                                        <p className="text-muted-foreground text-[10px] font-black uppercase tracking-widest opacity-60 mb-4">Price: rs.{item.price.toFixed(2)}</p>
-                                                        
-                                                        {/* Select Quantity */}
-                                                        <div className="flex items-center justify-center md:justify-start gap-4">
-                                                           <div className="flex items-center bg-background/50 rounded-2xl border border-primary/10 p-1">
-                                                              <Button 
-                                                                  variant="ghost" 
-                                                                  size="icon-sm"
-                                                                  onClick={() => handleUpdateQty(item.isDeal ? item.dealId : item.menuItem, item.qty - 1, item.isDeal)}
-                                                                  disabled={item.qty <= 1}
-                                                                  className="rounded-xl hover:bg-primary hover:text-black transition-colors"
-                                                              >
-                                                                  <Minus size={12}/>
-                                                              </Button>
-                                                              <span className="w-10 text-center font-black text-sm italic">{item.qty}</span>
-                                                              <Button 
-                                                                  variant="ghost" 
-                                                                  size="icon-sm"
-                                                                  onClick={() => handleUpdateQty(item.isDeal ? item.dealId : item.menuItem, item.qty + 1, item.isDeal)}
-                                                                  className="rounded-xl hover:bg-primary hover:text-black transition-colors"
-                                                              >
-                                                                  <Plus size={12}/>
-                                                              </Button>
-                                                           </div>
-                                                        </div>
+                                                    <div>
+                                                       <p className="font-black uppercase tracking-tight text-foreground leading-none mb-1">{item.name}</p>
+                                                       <p className="text-[9px] font-black uppercase tracking-widest text-primary/60 mt-1">Price: Rs. {item.price.toFixed(2)}</p>
                                                     </div>
 
                                                     {/* Item Total */}
@@ -265,7 +238,7 @@ const Cart = () => {
                                         </div>
                                         <div className="flex justify-between items-center">
                                             <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Original Total</span>
-                                            <span className="text-xl font-bold tracking-tight">rs.{subtotal.toFixed(2)}</span>
+                                            <span className="text-xl font-bold tracking-tight">Rs. {subtotal.toFixed(2)}</span>
                                         </div>
                                         <div className="h-px w-full bg-border/50" />
                                         <div className="flex justify-between items-end">
@@ -276,7 +249,7 @@ const Cart = () => {
                                                       <span className="text-[9px] font-black uppercase text-primary tracking-widest">{selectedTable.tableName || `Table ${selectedTable.tableNumber}`} Selected</span>
                                                    </div>
                                                )}
-                                               <span className="text-4xl font-black tracking-tighter italic">rs.{subtotal.toFixed(2)}</span>
+                                               <span className="text-4xl font-black tracking-tighter italic">Rs. {subtotal.toFixed(2)}</span>
                                             </div>
                                             <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
                                                <TrendingDown className="w-6 h-6 text-primary" />
@@ -292,10 +265,10 @@ const Cart = () => {
                                         <div className="space-y-4">
                                            {!userInfo ? (
                                                <Button 
-                                                   onClick={() => navigate('/login')}
+                                                   onClick={() => navigate('/register')}
                                                    className="w-full btn-primary h-20 text-xl font-black shadow-2xl flex items-center justify-between px-10 group"
                                                >
-                                                   <span>Login to Continue</span>
+                                                   <span>Join to Continue</span>
                                                    <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
                                                </Button>
                                            ) : (

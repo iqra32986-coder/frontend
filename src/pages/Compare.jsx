@@ -17,7 +17,8 @@ import {
   Layers,
   ArrowUpRight,
   Star,
-  MapPin
+  MapPin,
+  Store
 } from 'lucide-react';
 import gsap from 'gsap';
 import { Button } from '../components/ui/Button';
@@ -115,9 +116,9 @@ const Compare = () => {
 
         return (
             <div className={`flex flex-col gap-1 transition-all duration-500 ${isWinner ? 'text-primary scale-110' : 'text-muted-foreground opacity-60'}`}>
-                <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1 opacity-50">{field === 'price' ? 'Price' : 'Rating'}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest leading-none mb-1 opacity-50">{field === 'price' ? 'Market Value' : 'Rating'}</span>
                 <span className="text-xl font-black italic tracking-tighter">
-                    {field === 'price' ? `rs.${val1}` : val1 || 'N/A'}
+                    {field === 'price' ? `Rs. ${val1}` : val1 || 'N/A'}
                     {isWinner && <Zap size={14} className="inline ml-2 animate-pulse"/>}
                 </span>
             </div>
@@ -209,73 +210,96 @@ const Compare = () => {
                         <div className="flex flex-col lg:flex-row items-center gap-10">
                             
                             {/* Dish 1 */}
-                            <Card className="flex-1 w-full relative rounded-[3.5rem] bg-secondary/30 border-primary/5 p-10 lg:p-14 overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 blur-[80px] opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <Badge className="absolute top-10 left-10 h-8 px-4 bg-primary/10 text-primary border-primary/20 text-[9px] font-black uppercase tracking-widest rounded-full">DISH A</Badge>
+                            <Card className="flex-1 w-full relative rounded-[4rem] bg-secondary/30 border-primary/5 p-8 lg:p-10 overflow-hidden group transition-all duration-700 hover:bg-secondary/40">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <Badge className="absolute top-8 left-8 z-20 h-8 px-5 bg-primary text-black border-none text-[9px] font-black uppercase tracking-widest rounded-full shadow-xl">DISH A</Badge>
                                 
-                                <div className="flex items-center gap-12 mt-10">
-                                    <div className="w-40 h-40 lg:w-56 lg:h-56 rounded-[2.5rem] overflow-hidden shadow-3xl border-4 border-background rotate-[-2deg] group-hover:rotate-0 transition-transform duration-700">
+                                <div className="flex flex-col gap-10">
+                                    <div className="relative aspect-[16/11] rounded-[3rem] overflow-hidden shadow-2xl border-4 border-background/50 group-hover:scale-[1.02] transition-all duration-700">
                                         <img src={item1.imageUrl || DEFAULT_ITEM_IMG} className="w-full h-full object-cover" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                        <div className="absolute bottom-6 left-8 right-8">
+                                            <h3 className="text-4xl lg:text-5xl font-black uppercase tracking-tighter leading-none text-white group-hover:text-primary transition-colors">{item1.name}</h3>
+                                        </div>
                                     </div>
-                                    <div className="flex-1 space-y-6">
-                                        <div>
-                                            <h3 className="text-4xl lg:text-5xl font-black uppercase tracking-tighter leading-none mb-4">{item1.name}</h3>
-                                            <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-[9px] italic">
-                                                <MapPin size={12}/> {item1.restaurant_id?.name || 'Restaurant'}
+
+                                    <div className="space-y-8 px-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-[10px] italic">
+                                                <Store size={14}/> {item1.restaurant_id?.name || 'Restaurant'}
+                                            </div>
+                                            <div className="flex gap-1">
+                                                {[...Array(5)].map((_, i) => (
+                                                    <Star key={i} size={10} className={i < 4 ? "fill-primary text-primary" : "text-primary/20"} />
+                                                ))}
                                             </div>
                                         </div>
                                         
-                                        <div className="grid grid-cols-2 gap-8 pt-6 border-t border-primary/10">
+                                        <div className="grid grid-cols-2 gap-10 pt-8 border-t border-primary/10">
                                             {renderComparisonValue(item1, item2, 'price', true)}
-                                            {renderComparisonValue({mockRating: "4.8"}, {mockRating: "4.5"}, 'rating', false)}
+                                            {renderComparisonValue(item1, item2, 'rating', false)}
                                         </div>
+
+                                        <Button 
+                                            onClick={() => handleAdd(item1)} 
+                                            className="w-full h-20 bg-primary text-black rounded-[2.5rem] text-sm font-black uppercase tracking-widest shadow-2xl flex items-center justify-between px-10 group/btn hover:scale-[1.02] transition-all"
+                                        >
+                                            ADD TO CART <ArrowUpRight size={28} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
+                                        </Button>
                                     </div>
                                 </div>
-                                <Button 
-                                    onClick={() => handleAdd(item1)} 
-                                    className="w-full h-18 mt-12 bg-primary text-black rounded-[2rem] text-sm font-black uppercase tracking-widest shadow-2xl flex items-center justify-between px-10 group/btn"
-                                >
-                                    ADD TO CART <ArrowUpRight size={24} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
-                                </Button>
                             </Card>
 
                             {/* Versus Divider */}
                             {item2 && (
-                                <div className="w-24 h-24 rounded-full bg-background border border-primary/20 flex items-center justify-center text-2xl font-black italic shadow-2xl z-20 shrink-0 select-none">
-                                    VS
+                                <div className="relative group shrink-0">
+                                    <div className="absolute inset-0 bg-primary blur-2xl opacity-20 group-hover:opacity-40 transition-opacity animate-pulse" />
+                                    <div className="relative w-28 h-28 rounded-full bg-background border-2 border-primary/20 flex items-center justify-center text-3xl font-black italic shadow-3xl z-20 select-none group-hover:scale-110 transition-transform duration-500">
+                                        VS
+                                    </div>
                                 </div>
                             )}
 
                             {/* Dish 2 */}
                             {item2 && (
-                                <Card className="flex-1 w-full relative rounded-[3.5rem] bg-secondary/40 border-primary/10 p-10 lg:p-14 overflow-hidden group">
-                                    <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 blur-[80px] opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    <Badge className="absolute top-10 left-10 h-8 px-4 bg-primary/10 text-primary border-primary/20 text-[9px] font-black uppercase tracking-widest rounded-full">DISH B</Badge>
+                                <Card className="flex-1 w-full relative rounded-[4rem] bg-secondary/40 border-primary/10 p-8 lg:p-10 overflow-hidden group transition-all duration-700 hover:bg-secondary/50">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <Badge className="absolute top-8 left-8 z-20 h-8 px-5 bg-secondary text-muted-foreground border-none text-[9px] font-black uppercase tracking-widest rounded-full shadow-xl">DISH B</Badge>
                                     
-                                    <div className="flex items-center gap-12 mt-10">
-                                        <div className="w-40 h-40 lg:w-56 lg:h-56 rounded-[2.5rem] overflow-hidden shadow-3xl border-4 border-background rotate-[2deg] group-hover:rotate-0 transition-transform duration-700">
+                                    <div className="flex flex-col gap-10">
+                                        <div className="relative aspect-[16/11] rounded-[3rem] overflow-hidden shadow-2xl border-4 border-background/50 group-hover:scale-[1.02] transition-all duration-700">
                                             <img src={item2.imageUrl || DEFAULT_ITEM_IMG} className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                            <div className="absolute bottom-6 left-8 right-8">
+                                                <h3 className="text-4xl lg:text-5xl font-black uppercase tracking-tighter leading-none text-white group-hover:text-primary transition-colors">{item2.name}</h3>
+                                            </div>
                                         </div>
-                                        <div className="flex-1 space-y-6">
-                                            <div>
-                                                <h3 className="text-4xl lg:text-5xl font-black uppercase tracking-tighter leading-none mb-4">{item2.name}</h3>
-                                                <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-[9px] italic">
-                                                    <MapPin size={12}/> {item2.restaurant_id?.name || 'Restaurant'}
+
+                                        <div className="space-y-8 px-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-[10px] italic">
+                                                    <Store size={14}/> {item2.restaurant_id?.name || 'Restaurant'}
+                                                </div>
+                                                <div className="flex gap-1">
+                                                    {[...Array(5)].map((_, i) => (
+                                                        <Star key={i} size={10} className={i < 4 ? "fill-primary text-primary" : "text-primary/20"} />
+                                                    ))}
                                                 </div>
                                             </div>
                                             
-                                            <div className="grid grid-cols-2 gap-8 pt-6 border-t border-primary/10">
+                                            <div className="grid grid-cols-2 gap-10 pt-8 border-t border-primary/10">
                                                 {renderComparisonValue(item2, item1, 'price', true)}
-                                                {renderComparisonValue({mockRating: "4.5"}, {mockRating: "4.8"}, 'rating', false)}
+                                                {renderComparisonValue(item2, item1, 'rating', false)}
                                             </div>
+
+                                            <Button 
+                                                onClick={() => handleAdd(item2)} 
+                                                className="w-full h-20 bg-secondary/80 border border-primary/10 hover:bg-primary hover:text-black rounded-[2.5rem] text-sm font-black uppercase tracking-widest shadow-2xl flex items-center justify-between px-10 group/btn hover:scale-[1.02] transition-all"
+                                            >
+                                                ADD TO CART <ArrowUpRight size={28} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
+                                            </Button>
                                         </div>
                                     </div>
-                                    <Button 
-                                        onClick={() => handleAdd(item2)} 
-                                        className="w-full h-18 mt-12 bg-secondary/80 border border-primary/10 hover:bg-primary hover:text-black rounded-[2rem] text-sm font-black uppercase tracking-widest shadow-2xl flex items-center justify-between px-10 group/btn"
-                                    >
-                                        ADD TO CART <ArrowUpRight size={24} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
-                                    </Button>
                                 </Card>
                             )}
                         </div>

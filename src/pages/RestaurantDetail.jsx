@@ -66,7 +66,7 @@ const MenuCard = ({ item, onAdd }) => {
           
           <div className="mt-auto flex items-center justify-between">
              <div className="flex flex-col">
-                <span className="text-2xl font-black tracking-tighter leading-none"><span className="text-primary mr-1">rs.</span>{item.price.toFixed(2)}</span>
+                <span className="text-2xl font-black tracking-tighter leading-none"><span className="text-primary mr-1">Rs.</span>{item.price.toFixed(2)}</span>
              </div>
              <div className="w-11 h-11 rounded-2xl bg-secondary border border-primary/5 flex items-center justify-center group-hover:bg-primary transition-all duration-500">
                 <Plus className="w-5 h-5 text-muted-foreground group-hover:text-black" />
@@ -198,8 +198,7 @@ const RestaurantDetail = () => {
 
     const availablePayments = [
         restaurant.payments?.cod?.enabled && 'COD',
-        restaurant.payments?.jazzcash?.enabled && 'JazzCash',
-        restaurant.payments?.easypaisa?.enabled && 'Easypaisa'
+        restaurant.payments?.jazzcash?.enabled && 'JazzCash'
     ].filter(Boolean);
 
     return (

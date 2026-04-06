@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import gsap from 'gsap';
 import { 
@@ -13,7 +13,8 @@ import {
   EyeOff, 
   ArrowRight,
   Database,
-  Fingerprint
+  Fingerprint,
+  UserCircle
 } from 'lucide-react';
 import { setCredentials } from '../features/authSlice';
 import api from '../api';
@@ -31,6 +32,7 @@ const Login = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { theme } = useThemeStore();
+    const { cartItems } = useSelector((state) => state.cart);
     
     const containerRef = useRef(null);
 
@@ -63,8 +65,9 @@ const Login = () => {
                 duration: 0.5,
                 ease: 'power2.in',
                 onComplete: () => {
-                    if(data.role === 'Admin') navigate('/admin');
-                    else if(data.role === 'Restaurant') navigate('/restaurant');
+                    if (data.role === 'Admin') navigate('/admin');
+                    else if (data.role === 'Restaurant') navigate('/restaurant');
+                    else if (cartItems.length > 0) navigate('/billing');
                     else navigate('/');
                 }
             });
@@ -92,7 +95,7 @@ const Login = () => {
                            <div className="relative group cursor-pointer">
                               <div className="absolute inset-0 bg-primary/20 blur-2xl group-hover:bg-primary/40 transition-all rounded-full" />
                               <div className="relative w-20 h-20 rounded-[2rem] bg-background border border-primary/20 flex items-center justify-center rotate-12 transition-transform duration-500 hover:rotate-0">
-                                 <Fingerprint className="w-10 h-10 text-primary" />
+                                 <UserCircle className="w-10 h-10 text-primary" />
                               </div>
                            </div>
                         </div>

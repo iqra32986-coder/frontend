@@ -353,7 +353,7 @@ const TableSelection = () => {
                                     <div className="p-6 rounded-[2.5rem] bg-background/50 border border-primary/10 flex items-center justify-between">
                                         <div className="text-left">
                                             <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40 mb-1">Grand Total</p>
-                                            <p className="text-3xl font-black tracking-tighter italic">rs.{cartItems.reduce((a, c) => a + c.price * c.qty, 0).toFixed(0)}</p>
+                                            <p className="text-3xl font-black tracking-tighter italic">Rs. {cartItems.reduce((a, c) => a + c.price * c.qty, 0).toFixed(0)}</p>
                                         </div>
                                         <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
                                             <ShoppingBag className="w-6 h-6 text-primary" />

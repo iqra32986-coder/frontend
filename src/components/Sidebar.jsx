@@ -21,11 +21,13 @@ import {
   Box,
   Fingerprint,
   Sun,
-  Moon
+  Moon,
+  UserCircle
 } from 'lucide-react';
 import { useThemeStore } from '../store/themeStore';
 import { useState, useRef, useEffect } from 'react';
 import gsap from 'gsap';
+import navigationbar from '../assets/icons/favicon-32x32.png'
 
 const Sidebar = ({ menuItems, onLogout, isCollapsed, setIsCollapsed }) => {
   const { theme, toggleTheme } = useThemeStore();
@@ -51,7 +53,8 @@ const Sidebar = ({ menuItems, onLogout, isCollapsed, setIsCollapsed }) => {
         <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
         <Link to="/" className="flex items-center gap-4 relative z-10">
           <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-2xl shadow-primary/20 rotate-12 transition-transform group-hover:rotate-0">
-            <Fingerprint className="w-7 h-7 text-black" />
+        
+            <img src={navigationbar} alt="NAV LOGO"  className="w-10 h-10 text-black rounded-full"  />
           </div>
           {!isCollapsed && (
             <div className="flex flex-col">

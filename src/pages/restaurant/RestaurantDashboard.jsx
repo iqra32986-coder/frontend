@@ -219,6 +219,18 @@ const RestaurantDashboard = () => {
         try { 
             await api.put(`/reservations/${id}/status`, { status }); 
             toast.success(`Table reservation ${status.toLowerCase()}!`);
+            
+            // If completed, update table status back to Available
+            if (status === 'Completed') {
+                const res = reservations.find(r => r._id === id);
+                if (res) {
+                    const updatedTables = profile.tables.map(t => 
+                        t.tableNumber === res.tableNumber ? { ...t, status: 'Available' } : t
+                    );
+                    await api.put('/restaurants/myprofile', { ...profile, tables: updatedTables });
+                }
+            }
+            
             fetchData(); 
         }
         catch (error) { openModal({ type: 'error', title: 'Error', description: 'Failed to update reservation.' }); }
@@ -301,12 +313,12 @@ const RestaurantDashboard = () => {
                                                             <span className="text-[10px] font-black bg-background p-2 rounded-lg border border-primary/10 text-primary italic">{it.qty}x</span>
                                                             <span className="text-sm font-black uppercase tracking-tight italic">{it.menuItem?.name || 'Removed Item'}</span>
                                                         </div>
-                                                        <span className="text-sm font-black italic opacity-50">${it.price * it.qty}</span>
+                                                        <span className="text-sm font-black italic opacity-50">Rs. {it.price * it.qty}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                             <div className="flex items-center justify-between gap-4">
-                                                <p className="text-2xl font-black italic">${order.totalAmount}</p>
+                                                <p className="text-2xl font-black italic">Rs. {order.totalAmount}</p>
                                                 <div className="flex gap-3">
                                                     {order.status === 'Pending' && (<>
                                                         <Button onClick={() => updateOrderStatus(order._id, 'Preparing')} className="h-14 px-6 btn-primary rounded-2xl text-[9px] font-black">START PREPARING</Button>
@@ -333,7 +345,7 @@ const RestaurantDashboard = () => {
                 {/* RESERVATIONS */}
                 {view === 'reservations' && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        {reservations.filter(r => r.status !== 'Accepted' && r.status !== 'Declined' && r.status !== 'Completed').length > 0 ? reservations.filter(r => r.status !== 'Accepted' && r.status !== 'Declined' && r.status !== 'Completed').slice().reverse().map(res => (
+                        {reservations.filter(r => r.status !== 'Declined' && r.status !== 'Completed').length > 0 ? reservations.filter(r => r.status !== 'Declined' && r.status !== 'Completed').slice().reverse().map(res => (
                             <Card key={res._id} className="group rounded-[3rem] bg-secondary/30 border-primary/10 overflow-hidden shadow-2xl hover:border-primary/20 transition-all">
                                 <CardContent className="p-10 flex flex-col gap-8">
                                     <div className="flex justify-between items-start">
@@ -519,7 +531,7 @@ const RestaurantDashboard = () => {
                                     <CardContent className="p-0 flex">
                                         <div className="w-32 relative flex-shrink-0 overflow-hidden"><img src={deal.imageUrl || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80'} alt={deal.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"/><div className="absolute inset-0 bg-black/50 flex items-center justify-center"><Badge className="bg-primary text-black text-[8px] font-black">{deal.discountValue}</Badge></div></div>
                                         <div className="flex-1 p-8 flex justify-between items-center gap-4">
-                                            <div><h4 className="text-xl font-black uppercase tracking-tighter italic leading-none mb-1">{deal.title}</h4><p className="text-3xl font-black italic text-primary leading-none mt-3">${deal.price}</p></div>
+                                            <div><h4 className="text-xl font-black uppercase tracking-tighter italic leading-none mb-1">{deal.title}</h4><p className="text-3xl font-black italic text-primary leading-none mt-3">Rs. {deal.price}</p></div>
                                             <Button variant="ghost" onClick={() => deleteDeal(deal._id)} className="w-12 h-12 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive hover:text-white shrink-0"><Trash size={18}/></Button>
                                         </div>
                                     </CardContent>

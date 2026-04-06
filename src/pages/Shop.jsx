@@ -68,11 +68,27 @@ const ShopItemCard = ({ item, onAdd, onShowReviews }) => {
             </button>
           </div>
           
-          <h3 className="text-2xl font-black tracking-tight mb-4 uppercase truncate leading-none">{item.name}</h3>
+          <h3 className="text-2xl font-black tracking-tight mb-2 uppercase truncate leading-none">{item.name}</h3>
+          
+          {/* Ingredients Display */}
+          {item.ingredients && item.ingredients.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-4 mt-2">
+              {item.ingredients.slice(0, 4).map((ing, idx) => (
+                <span key={idx} className="text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-md bg-primary/5 border border-primary/10 text-primary/60">
+                  {ing}
+                </span>
+              ))}
+              {item.ingredients.length > 4 && (
+                <span className="text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-md bg-secondary text-muted-foreground/40">
+                  +{item.ingredients.length - 4} More
+                </span>
+              )}
+            </div>
+          )}
           
           <div className="mt-auto flex items-center justify-between">
              <div className="flex flex-col">
-                <span className="text-2xl font-black tracking-tighter leading-none"><span className="text-primary mr-1">rs.</span>{item.price.toFixed(2)}</span>
+                <span className="text-2xl font-black tracking-tighter leading-none"><span className="text-primary mr-1">Rs.</span>{item.price.toFixed(2)}</span>
                  <span className="text-[9px] font-bold text-muted-foreground uppercase opacity-60 mt-1">{item.category || 'MENU SELECTION'}</span>
              </div>
              <div className="w-11 h-11 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center opacity-40 group-hover:opacity-100 group-hover:rotate-12 transition-all duration-500">

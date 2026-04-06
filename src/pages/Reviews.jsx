@@ -197,8 +197,9 @@ const Reviews = () => {
                                              onChange={(e) => setNewReview({...newReview, targetId: e.target.value})}
                                              disabled={editId !== null}
                                          >
+                                             <option value="">Select a Restaurant</option>
                                              {restaurants.map(r => (
-                                                 <option key={r._id} value={r.user_id}>{r.name} — {r.location}</option>
+                                                 <option key={r._id} value={r.user_id}>{r.name}</option>
                                              ))}
                                          </select>
                                     </div>

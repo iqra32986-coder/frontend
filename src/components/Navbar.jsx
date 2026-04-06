@@ -20,6 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/DropdownMenu';
+import navbaricon from '../assets/icons/favicon-32x32.png'
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
 
@@ -76,12 +77,12 @@ const Navbar = () => {
           to="/"
           className="text-xl sm:text-2xl font-black tracking-tighter transition-all hover:scale-105 active:scale-95 group flex items-center gap-2 sm:gap-3"
         >
-          <div className="bg-primary p-1.5 rounded-lg rotate-3 group-hover:rotate-12 transition-transform shrink-0">
-             <Utensils className="w-5 h-5 text-black" />
+          <div className="bg-transparent p-1.5 rounded-lg  group-hover:rotate-12 transition-transform shrink-0">
+             <img src={navbaricon} alt="" className="w-10 h-10 rounded-full text-black" />
           </div>
-          <div className="flex flex-col sm:flex-row sm:gap-2 leading-none">
+          <div className="flex flex-col items-center justify-center sm:flex-row sm:gap-2 leading-none">
             <span className="text-foreground">Smart Dine</span>
-            <span className="text-primary text-[10px] sm:text-2xl tracking-[0.2em] sm:tracking-tighter uppercase sm:normal-case mt-1 sm:mt-0">Food Court</span>
+            <span className="text-primary  text-[10px] sm:text-2xl tracking-[0.2em] sm:tracking-tighter uppercase sm:normal-case mt-1 sm:mt-0">Food Court</span>
           </div>
         </Link>
 

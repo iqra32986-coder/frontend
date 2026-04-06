@@ -194,8 +194,8 @@ const MyOrders = () => {
                                             </p>
                                         </div>
                                         <div className="space-y-2 p-6 rounded-3xl bg-background/50 border border-primary/10">
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-primary/60">Total Amount</span>
-                                            <p className="text-2xl font-black tracking-tighter italic">Rs. {order.totalAmount.toFixed(2)}</p>
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-primary/60">Settlement</span>
+                                            <p className="text-2xl font-black tracking-tighter italic">Rs. {order.totalAmount}</p>
                                         </div>
                                     </div>
 

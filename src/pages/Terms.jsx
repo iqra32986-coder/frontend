@@ -3,7 +3,7 @@ const Terms = () => {
         "Once you place an order, it starts right away—so we can’t cancel it.",
         "Prices are set by the restaurant. Please check the price before you pay.",
         "Table bookings depend on availability. Please arrive within 10 minutes.",
-        "JazzCash and Easypaisa payments are confirmed inside the app after transfer.",
+        "JazzCash payments are confirmed inside the app after transfer.",
         "Restaurants are responsible for the food quality."
     ];
 

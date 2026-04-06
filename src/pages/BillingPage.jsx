@@ -77,6 +77,11 @@ const BillingPage = () => {
     }, []);
 
     const handlePlaceOrder = async () => {
+        if (!userInfo) {
+            toast.error("Please sign in to complete your order.");
+            navigate('/register');
+            return;
+        }
         if (!contactInfo.name || !contactInfo.phone || !selectedTable) {
             return;
         }
@@ -279,11 +284,11 @@ const BillingPage = () => {
                                                 </div>
                                                 <div>
                                                    <p className="font-black uppercase tracking-tight text-foreground leading-none mb-1">{item.name}</p>
-                                                   <p className="text-[9px] font-bold text-muted-foreground uppercase opacity-40">Price: Rs. {item.price.toFixed(2)}</p>
+                                                   <p className="text-[9px] font-bold text-muted-foreground uppercase opacity-40">Price: Rs. {item.price.toLocaleString()}</p>
                                                 </div>
                                              </div>
                                              <div className="text-right">
-                                                <p className="text-xl font-black tracking-tighter italic leading-none">Rs. {(item.qty * item.price).toFixed(2)}</p>
+                                                <p className="text-xl font-black tracking-tighter italic leading-none">Rs. {(item.qty * item.price).toLocaleString()}</p>
                                              </div>
                                           </div>
                                        ))}
@@ -293,7 +298,7 @@ const BillingPage = () => {
                                        <div className="flex justify-between items-end">
                                           <div>
                                              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60 mb-1">Total Payable</p>
-                                             <p className="text-4xl font-black tracking-tighter leading-none italic">Rs. {subtotal.toFixed(2)}</p>
+                                             <p className="text-4xl font-black tracking-tighter leading-none italic">Rs. {subtotal.toLocaleString()}</p>
                                           </div>
                                           <div className="flex items-center gap-2 text-[9px] font-black text-muted-foreground uppercase opacity-40">
                                              <ShieldCheck className="w-3 h-3" /> Encrypted Transaction
@@ -348,8 +353,8 @@ const BillingPage = () => {
                                     {/* Settlement Selection */}
                                     <div className="space-y-6 pt-4">
                                        <label className="text-[10px] font-black uppercase tracking-widest text-primary/60 ml-2">Payment Method</label>
-                                       <div className="grid grid-cols-3 gap-4">
-                                          {['COD', 'JazzCash', 'Easypaisa'].map((meth) => (
+                                       <div className="grid grid-cols-2 gap-4">
+                                          {['COD', 'JazzCash'].map((meth) => (
                                              <button 
                                                 key={meth}
                                                 onClick={() => setPaymentMethod(meth)}

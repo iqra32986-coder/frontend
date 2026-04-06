@@ -27,11 +27,9 @@ const SelectTableModal = ({ isOpen, onClose, onSelect, restaurantId }) => {
             setLoading(true);
             try {
                 const { data } = await api.get('/reservations/tables');
-                // Filter by restaurant if provided (matching either Profile ID or User ID for safety)
-                const filtered = restaurantId 
-                    ? data.filter(t => (t.restaurant_id === restaurantId || t.profile_id === restaurantId) && t.status === 'Available')
-                    : data.filter(t => t.status === 'Available');
-                setTables(filtered);
+                // Fetch all available tables across all restaurants
+                const availableTables = data.filter(t => t.status === 'Available');
+                setTables(availableTables);
                 setLoading(false);
             } catch (error) {
                 console.error(error);

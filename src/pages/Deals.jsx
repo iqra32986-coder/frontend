@@ -397,7 +397,7 @@ const Deals = () => {
                             <CardContent className="p-10 space-y-8">
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-1">
-                                        <p className="text-3xl font-black italic tracking-tighter">Rs. {deal.price || 'COMMUNICATION ERROR'}</p>
+                                        <p className="text-4xl font-black italic tracking-tighter text-primary">Rs. {deal.price}</p>
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <div className="flex -space-x-4">

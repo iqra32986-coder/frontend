@@ -44,7 +44,8 @@ import {
   Navigation,
   Box,
   Fingerprint,
-  CalendarDays
+  CalendarDays,
+  UserCircle
 } from 'lucide-react';
 import api from '../../api';
 import Sidebar from '../../components/Sidebar';
@@ -64,6 +65,11 @@ const AdminDashboard = () => {
     
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [view, setView] = useState('analytics');
+    const [healthData, setHealthData] = useState(null);
+    const [isHealthLoading, setIsHealthLoading] = useState(false);
+    const [newEndpoint, setNewEndpoint] = useState({ path: '', method: 'GET' });
+    const [isManagingEndpoints, setIsManagingEndpoints] = useState(false);
+    
     const [analytics, setAnalytics] = useState({ usersCount: 0, ordersCount: 0, totalRevenue: 0 });
     const [users, setUsers] = useState([]);
     const [allOrders, setAllOrders] = useState([]);
@@ -107,9 +113,55 @@ const AdminDashboard = () => {
         return () => ctx.revert();
     }, [view, loading]);
 
+    const fetchHealthData = async () => {
+        setIsHealthLoading(true);
+        try {
+            const { data } = await api.get('/admin/health');
+            setHealthData(data);
+        } catch (error) {
+            toast.error('System status retrieval failed.');
+        } finally {
+            setIsHealthLoading(false);
+        }
+    };
+
+    const handleUpdateEndpoints = async (updatedList) => {
+        try {
+            await api.post('/admin/settings', { key: 'monitored_endpoints', value: updatedList });
+            toast.success('Monitored endpoints updated.');
+            fetchHealthData();
+        } catch (error) {
+            toast.error('Failed to update monitored endpoints.');
+        }
+    };
+
+    const addEndpoint = () => {
+        if (!newEndpoint.path) return;
+        const updated = [...healthData.endpoints, { ...newEndpoint, status: 'Online' }];
+        handleUpdateEndpoints(updated);
+        setNewEndpoint({ path: '', method: 'GET' });
+    };
+
+    const removeEndpoint = (index) => {
+        const updated = healthData.endpoints.filter((_, i) => i !== index);
+        handleUpdateEndpoints(updated);
+    };
+
+    const toggleEndpointStatus = (index) => {
+        const updated = [...healthData.endpoints];
+        updated[index].status = updated[index].status === 'Online' ? 'Offline' : 'Online';
+        handleUpdateEndpoints(updated);
+    };
+
     const fetchData = async () => {
         setLoading(true);
         try {
+            if (view === 'health') {
+                await fetchHealthData();
+                setLoading(false);
+                return;
+            }
+
             const { data: analyticsData } = await api.get('/admin/analytics');
             setAnalytics(analyticsData);
             
@@ -254,6 +306,27 @@ const AdminDashboard = () => {
         try {
             await api.put(`/reservations/${id}/status`, { status });
             toast.success(`Booking status changed to: ${status}`);
+            
+            // If completed, update table status back to Available
+            if (status === 'Completed') {
+                const res = allReservations.find(r => r._id === id);
+                if (res && res.restaurant_id?._id) {
+                    try {
+                        // We need the restaurant profile to update tables
+                        const { data: profiles } = await api.get('/restaurants');
+                        const profile = profiles.find(p => p.user_id === res.restaurant_id._id);
+                        if (profile) {
+                            const updatedTables = profile.tables.map(t => 
+                                t.tableNumber === res.tableNumber ? { ...t, status: 'Available' } : t
+                            );
+                            await api.put(`/restaurants/myprofile`, { ...profile, tables: updatedTables });
+                        }
+                    } catch (err) {
+                        console.error("Failed to reset table status", err);
+                    }
+                }
+            }
+            
             fetchData();
         } catch (error) {
             toast.error('Failed to modify reservation status.');
@@ -294,9 +367,10 @@ const AdminDashboard = () => {
         { label: 'Orders', icon: <Package size={18}/>, onClick: () => setView('orders'), activeCheck: () => view === 'orders' },
         { label: 'Reservations', icon: <ClipboardList size={18}/>, onClick: () => setView('bookings'), activeCheck: () => view === 'bookings' },
         { label: 'Global Menu', icon: <Layers size={18}/>, onClick: () => setView('menu'), activeCheck: () => view === 'menu' },
-        { label: 'Promotions', icon: <Tag size={18}/>, onClick: () => setView('deals'), activeCheck: () => view === 'deals' },
-        { label: 'Guest Mods', icon: <MessageSquare size={18}/>, onClick: () => setView('social'), activeCheck: () => view === 'social' },
-        { label: 'Coordinates', icon: <MapPin size={18}/>, onClick: () => setView('floor'), activeCheck: () => view === 'floor' }
+        { label: 'Deals', icon: <Tag size={18}/>, onClick: () => setView('deals'), activeCheck: () => view === 'deals' },
+        { label: 'Reviews', icon: <MessageSquare size={18}/>, onClick: () => setView('social'), activeCheck: () => view === 'social' },
+        { label: 'Coordinates', icon: <MapPin size={18}/>, onClick: () => setView('floor'), activeCheck: () => view === 'floor' },
+        { label: 'System Health', icon: <Activity size={18}/>, onClick: () => setView('health'), activeCheck: () => view === 'health' }
     ];
 
     const logoutHandler = () => {
@@ -546,7 +620,7 @@ const AdminDashboard = () => {
                                     <CardContent className="p-10 flex flex-col gap-8 relative z-10">
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <Badge className="bg-primary/10 text-primary border-primary/20 text-[8px] font-black tracking-widest mb-4">ID: {order.trackingId}</Badge>
+                                                <Badge className="bg-primary/10 text-primary border-primary/20 text-[400px] font-black tracking-widest mb-4">ID: {order.trackingId}</Badge>
                                                 <h3 className="text-3xl font-black tracking-tighter uppercase italic leading-none">{order.customerContact?.name || order.customer_id?.name || 'GUEST USER'}</h3>
                                                 <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest mt-2 flex items-center gap-2">
                                                    <Store className="w-3 h-3" /> Restaurant: {order.restaurant_id?.name || 'N/A'}
@@ -605,6 +679,291 @@ const AdminDashboard = () => {
 
                 {/* --- UNIFIED BOOKING DESK --- */}
                 {view === 'bookings' && (
+                    <div className="max-w-5xl mx-auto space-y-12">
+                        <div className="flex flex-col md:flex-row justify-between items-center gap-12">
+                             <div className="space-y-4 text-center md:text-left">
+                                <h2 className="text-4xl lg:text-6xl font-black uppercase tracking-tighter italic leading-none text-foreground">Booking <span className="text-primary not-italic">Desk.</span></h2>
+                                <p className="text-muted-foreground font-black uppercase tracking-widest text-[11px] opacity-40">Review and moderate all venue reservations globally.</p>
+                             </div>
+                             <div className="flex items-center gap-6">
+                                <div className="flex -space-x-4">
+                                    {[...Array(3)].map((_, i) => (
+                                        <div key={i} className="w-14 h-14 rounded-full border-4 border-background bg-secondary flex items-center justify-center text-primary font-black text-xs italic shadow-xl">
+                                            {String.fromCharCode(65 + i)}
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Active Requests</p>
+                                    <p className="text-3xl font-black italic">{allReservations.filter(r => r.status === 'Pending').length}</p>
+                                </div>
+                             </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-8">
+                                    {allReservations.filter(r => r.status !== 'Declined' && r.status !== 'Completed').length > 0 ? (
+                                        allReservations.filter(r => r.status !== 'Declined' && r.status !== 'Completed').map(res => (
+                                            <Card key={res._id} className="rounded-[3rem] bg-secondary/30 border-primary/10 overflow-hidden shadow-2xl transition-all duration-700 hover:border-primary/30 group">
+                                                <CardContent className="p-10 lg:p-12 flex flex-col md:flex-row items-center justify-between gap-12 relative overflow-hidden">
+                                                    <div className="absolute top-0 right-0 p-12 opacity-[0.03] group-hover:opacity-10 transition-opacity pointer-events-none">
+                                                        <ClipboardList className="w-48 h-48 rotate-12" />
+                                                    </div>
+                                                    
+                                                    <div className="flex flex-col md:flex-row items-center gap-10 relative z-10">
+                                                        <div className="w-24 h-24 rounded-3xl bg-background border-2 border-primary/10 flex items-center justify-center text-primary shadow-2xl group-hover:rotate-6 transition-transform">
+                                                            <CalendarDays size={40} />
+                                                        </div>
+                                                        <div className="text-center md:text-left space-y-3">
+                                                            <div className="flex items-center justify-center md:justify-start gap-3">
+                                                                <h3 className="text-3xl font-black uppercase tracking-tighter italic leading-none">{res.name}</h3>
+                                                                <Badge className={`h-6 px-3 rounded-lg text-[8px] font-black uppercase tracking-widest ${res.status === 'Accepted' ? 'bg-primary text-black' : 'bg-secondary text-muted-foreground'}`}>{res.status}</Badge>
+                                                            </div>
+                                                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 italic">
+                                                                <span className="flex items-center gap-2"><Phone size={12} className="text-primary/40"/> {res.phone}</span>
+                                                                <span className="flex items-center gap-2"><Store size={12} className="text-primary/40"/> {res.restaurant_id?.name}</span>
+                                                                <span className="flex items-center gap-2"><Layout size={12} className="text-primary/40"/> Table {res.tableNumber}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-4 relative z-10">
+                                                        <div className="flex gap-2">
+                                                            {res.status === 'Pending' && (
+                                                                <>
+                                                                    <Button onClick={() => updateReservationStatus(res._id, 'Accepted')} variant="ghost" className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/5 hover:bg-primary hover:text-black transition-all">
+                                                                        <CheckCircle size={20}/>
+                                                                    </Button>
+                                                                    <Button onClick={() => updateReservationStatus(res._id, 'Declined')} variant="ghost" className="w-12 h-12 rounded-xl bg-destructive/10 border border-destructive/5 hover:bg-destructive hover:text-white transition-all text-destructive">
+                                                                        <XCircle size={20}/>
+                                                                    </Button>
+                                                                </>
+                                                            )}
+                                                            {res.status === 'Accepted' && (
+                                                                <Button onClick={() => updateReservationStatus(res._id, 'Completed')} variant="ghost" className="w-full h-12 rounded-xl bg-green-500/10 border border-green-500/20 hover:bg-green-500 hover:text-white transition-all text-green-500 flex items-center justify-center gap-2 px-4">
+                                                                    <CheckCircle size={16}/> <span className="text-[10px] font-black uppercase">COMPLETE</span>
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        ))
+                                    ) : (
+                                        <div className="py-40 text-center border-2 border-dashed border-primary/10 rounded-[5rem] opacity-30 italic">
+                                             <CalendarDays size={80} className="mx-auto mb-6 opacity-20"/>
+                                             <p className="text-2xl font-black uppercase tracking-tighter">No Scheduled Events.</p>
+                                        </div>
+                                    )}
+                        </div>
+                    </div>
+                )}
+
+                {/* --- SYSTEM HEALTH VIEW --- */}
+                {view === 'health' && healthData && (
+                    <div className="max-w-6xl mx-auto space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+                        {/* Header Stats */}
+                        <div className="flex flex-col lg:flex-row justify-between items-center gap-12">
+                             <div className="space-y-4 text-center lg:text-left">
+                                <h2 className="text-4xl lg:text-7xl font-black uppercase tracking-tighter italic leading-none">System <span className="text-primary not-italic">Health.</span></h2>
+                                <p className="text-muted-foreground font-black uppercase tracking-widest text-[11px] opacity-40">Monitor API performance and backend infrastructure.</p>
+                             </div>
+                             <div className="flex items-center gap-6">
+                                <Card className={`rounded-3xl shadow-2xl p-8 flex items-center gap-6 group border-none ${healthData.status === 'Operational' ? 'bg-primary' : 'bg-destructive text-white'}`}>
+                                    <div className="w-16 h-16 rounded-2xl bg-background/20 flex items-center justify-center rotate-6 group-hover:rotate-0 transition-transform">
+                                       <Activity size={28} className={healthData.status === 'Operational' ? 'text-black' : 'text-white'}/>
+                                    </div>
+                                    <div>
+                                       <p className="text-3xl font-black tracking-tighter leading-none uppercase">{healthData.status}</p>
+                                       <p className={`text-[9px] font-black uppercase tracking-widest ${healthData.status === 'Operational' ? 'text-black/60' : 'text-white/60'}`}>System Status</p>
+                                    </div>
+                                </Card>
+                             </div>
+                        </div>
+
+                        {/* Status Grid */}
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
+                            {/* Infrastructure Card */}
+                            <Card className="rounded-[4rem] bg-secondary/30 border-primary/10 overflow-hidden shadow-2xl p-10 lg:p-14">
+                                <div className="space-y-12">
+                                    <div className="flex items-center gap-4">
+                                       <Box className="w-6 h-6 text-primary" />
+                                       <h3 className="text-2xl font-black uppercase tracking-tight italic">Backend <span className="not-italic text-primary">Core.</span></h3>
+                                       <div className="h-px flex-1 bg-primary/10" />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="p-8 rounded-[2.5rem] bg-background/50 border border-primary/10 space-y-4 group hover:border-primary/40 transition-all">
+                                            <div className="flex justify-between items-start">
+                                                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                                                    <RefreshCw size={24} className="group-hover:rotate-180 transition-transform duration-700"/>
+                                                </div>
+                                                <Badge className="bg-primary/20 text-primary border-primary/20 text-[8px] font-black">STABLE</Badge>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40 mb-1">Database Sync</p>
+                                                <p className="text-2xl font-black tracking-tighter italic text-primary">{healthData.database.status}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-8 rounded-[2.5rem] bg-background/50 border border-primary/10 space-y-4 group hover:border-primary/40 transition-all">
+                                            <div className="flex justify-between items-start">
+                                                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                                                    <Clock size={24}/>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40 mb-1">Uptime Elapsed</p>
+                                                <p className="text-2xl font-black tracking-tighter italic">{healthData.server.uptime}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-8 rounded-[2.5rem] bg-background/50 border border-primary/10 space-y-4 group hover:border-primary/40 transition-all">
+                                            <div className="flex justify-between items-start">
+                                                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                                                    <Zap size={24}/>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40 mb-1">Heap Memory</p>
+                                                <p className="text-2xl font-black tracking-tighter italic">{healthData.server.memory}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-8 rounded-[2.5rem] bg-background/50 border border-primary/10 space-y-4 group hover:border-primary/40 transition-all">
+                                            <div className="flex justify-between items-start">
+                                                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                                                    <UserCircle size={24}/>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40 mb-1">Node Environment</p>
+                                                <p className="text-2xl font-black tracking-tighter italic uppercase">{healthData.server.nodeVersion}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Card>
+
+                            {/* API Endpoints Card */}
+                            <Card className="rounded-[4rem] bg-secondary/30 border-primary/10 overflow-hidden shadow-2xl p-10 lg:p-14">
+                                <div className="space-y-12">
+                                    <div className="flex items-center justify-between gap-4">
+                                       <div className="flex items-center gap-4">
+                                            <Terminal className="w-6 h-6 text-primary" />
+                                            <h3 className="text-2xl font-black uppercase tracking-tight italic">Endpoint <span className="not-italic text-primary">Status.</span></h3>
+                                       </div>
+                                       <Button 
+                                            variant="ghost" 
+                                            onClick={() => setIsManagingEndpoints(!isManagingEndpoints)}
+                                            className="h-10 px-4 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-black transition-all text-[10px] font-black uppercase tracking-widest"
+                                       >
+                                            {isManagingEndpoints ? 'CLOSE MONITOR' : 'MANAGE ENDPOINTS'}
+                                       </Button>
+                                    </div>
+
+                                    {isManagingEndpoints && (
+                                        <div className="p-8 rounded-[2.5rem] bg-background/50 border-2 border-primary/20 space-y-8 animate-in zoom-in-95 duration-500">
+                                            <div className="space-y-4">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-primary italic">Register New Access Point</p>
+                                                <div className="flex gap-4">
+                                                    <select 
+                                                        className="h-14 px-4 rounded-xl bg-secondary border border-primary/10 text-[10px] font-black uppercase text-primary outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                                                        value={newEndpoint.method}
+                                                        onChange={(e) => setNewEndpoint({...newEndpoint, method: e.target.value})}
+                                                    >
+                                                        <option value="GET">GET</option>
+                                                        <option value="POST">POST</option>
+                                                        <option value="PUT">PUT</option>
+                                                        <option value="DELETE">DELETE</option>
+                                                    </select>
+                                                    <Input 
+                                                        className="h-14 rounded-xl bg-secondary border-primary/10 font-bold tracking-tight uppercase"
+                                                        placeholder="/api/example-endpoint..."
+                                                        value={newEndpoint.path}
+                                                        onChange={(e) => setNewEndpoint({...newEndpoint, path: e.target.value})}
+                                                    />
+                                                    <Button onClick={addEndpoint} className="h-14 w-14 rounded-xl bg-primary text-black hover:scale-105 transition-all flex items-center justify-center p-0">
+                                                        <PlusCircle size={24}/>
+                                                    </Button>
+                                                </div>
+                                            </div>
+
+                                            <div className="h-px bg-primary/10" />
+
+                                            <div className="space-y-4">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-40 italic">Active Monitors</p>
+                                                <div className="space-y-3">
+                                                    {healthData.endpoints.map((ep, i) => (
+                                                        <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-secondary/20 border border-primary/5">
+                                                            <div className="flex items-center gap-4">
+                                                                <Badge className="h-8 px-3 rounded-lg bg-primary/20 text-primary border-primary/10 text-[8px] font-black uppercase">{ep.method}</Badge>
+                                                                <span className="text-xs font-black uppercase tracking-tight opacity-70 italic">{ep.path}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <Button 
+                                                                    variant="ghost" 
+                                                                    onClick={() => toggleEndpointStatus(i)}
+                                                                    className={`h-8 px-3 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${ep.status === 'Online' ? 'bg-green-500/10 text-green-500' : 'bg-destructive/10 text-destructive'}`}
+                                                                >
+                                                                    {ep.status === 'Online' ? 'SET OFFLINE' : 'SET ONLINE'}
+                                                                </Button>
+                                                                <Button 
+                                                                    variant="ghost" 
+                                                                    onClick={() => removeEndpoint(i)}
+                                                                    className="w-8 h-8 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all p-0"
+                                                                >
+                                                                    <Trash size={14}/>
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-4">
+                                        {healthData.endpoints.map((endpoint, i) => (
+                                            <div key={i} className="group p-6 rounded-3xl bg-background/50 border border-primary/5 hover:border-primary/20 transition-all flex items-center justify-between">
+                                                <div className="flex items-center gap-6">
+                                                    <Badge className="h-10 px-4 rounded-xl bg-primary text-black font-black uppercase text-[9px] group-hover:scale-105 transition-transform">{endpoint.method}</Badge>
+                                                    <div>
+                                                        <p className="text-sm font-black tracking-tight text-foreground/80 uppercase">{endpoint.path}</p>
+                                                        <p className="text-[9px] font-bold text-muted-foreground uppercase opacity-40">Public Access Point</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-2.5 h-2.5 rounded-full animate-pulse ${endpoint.status === 'Online' ? 'bg-primary shadow-[0_0_10px_rgba(255,215,0,0.4)]' : 'bg-destructive shadow-[0_0_10px_rgba(255,0,0,0.4)]'}`} />
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${endpoint.status === 'Online' ? 'text-primary' : 'text-destructive'}`}>{endpoint.status}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="p-8 rounded-[2.5rem] bg-primary/5 border border-primary/10 space-y-4 italic">
+                                        <div className="flex items-center gap-3">
+                                            <ShieldCheck size={18} className="text-primary"/>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Optimization Insights</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-6">
+                                            {healthData.optimizations.map((opt, i) => (
+                                                <div key={i}>
+                                                    <p className="text-[11px] font-black tracking-tight uppercase leading-none mb-1">{opt.task}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[8px] font-black uppercase text-primary/40 tracking-widest">{opt.status}</span>
+                                                        <div className="w-1 h-1 rounded-full bg-primary/20" />
+                                                        <span className="text-[8px] font-black uppercase text-primary tracking-widest">{opt.impact} Impact</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </Card>
+                        </div>
+                    </div>
+                )}
+                {view === 'bookings' && (
                      <Card className="rounded-[4rem] bg-secondary/30 border-primary/10 overflow-hidden shadow-2xl">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
@@ -617,8 +976,8 @@ const AdminDashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {allReservations.filter(r => r.status !== 'Accepted' && r.status !== 'Declined' && r.status !== 'Completed').length > 0 ? (
-                                        allReservations.filter(r => r.status !== 'Accepted' && r.status !== 'Declined' && r.status !== 'Completed').map(res => (
+                                    {allReservations.filter(r => r.status !== 'Declined' && r.status !== 'Completed').length > 0 ? (
+                                        allReservations.filter(r => r.status !== 'Declined' && r.status !== 'Completed').map(res => (
                                             <tr key={res._id} className="border-b border-primary/5 hover:bg-primary/5 transition-colors group">
                                                 <td className="px-10 py-12">
                                                     <div className="flex items-center gap-6">
@@ -651,12 +1010,21 @@ const AdminDashboard = () => {
                                                             {res.status}
                                                         </Badge>
                                                         <div className="flex gap-2">
-                                                            <Button onClick={() => updateReservationStatus(res._id, 'Accepted')} variant="ghost" className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/5 hover:bg-primary hover:text-black transition-all">
-                                                                <CheckCircle size={20}/>
-                                                            </Button>
-                                                            <Button onClick={() => updateReservationStatus(res._id, 'Declined')} variant="ghost" className="w-12 h-12 rounded-xl bg-destructive/10 border border-destructive/5 hover:bg-destructive hover:text-white transition-all text-destructive">
-                                                                <XCircle size={20}/>
-                                                            </Button>
+                                                            {res.status === 'Pending' && (
+                                                                <>
+                                                                    <Button onClick={() => updateReservationStatus(res._id, 'Accepted')} variant="ghost" className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/5 hover:bg-primary hover:text-black transition-all">
+                                                                        <CheckCircle size={20}/>
+                                                                    </Button>
+                                                                    <Button onClick={() => updateReservationStatus(res._id, 'Declined')} variant="ghost" className="w-12 h-12 rounded-xl bg-destructive/10 border border-destructive/5 hover:bg-destructive hover:text-white transition-all text-destructive">
+                                                                        <XCircle size={20}/>
+                                                                    </Button>
+                                                                </>
+                                                            )}
+                                                            {res.status === 'Accepted' && (
+                                                                <Button onClick={() => updateReservationStatus(res._id, 'Completed')} variant="ghost" className="w-full h-12 rounded-xl bg-green-500/10 border border-green-500/20 hover:bg-green-500 hover:text-white transition-all text-green-500 flex items-center justify-center gap-2 px-4">
+                                                                    <CheckCircle size={16}/> <span className="text-[10px] font-black uppercase">COMPLETE</span>
+                                                                </Button>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </td>
@@ -708,7 +1076,7 @@ const AdminDashboard = () => {
                                     <CardContent className="p-8 flex justify-between items-center bg-secondary/20">
                                         <div className="flex flex-col gap-1">
                                             <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest italic">Price</span>
-                                            <p className="text-2xl font-black tracking-tighter italic text-primary">${item.price}</p>
+                                            <p className="text-2xl font-black tracking-tighter italic text-primary">Rs. {item.price}</p>
                                         </div>
                                         <Badge className="h-10 px-6 rounded-xl bg-secondary text-muted-foreground text-[10px] font-black uppercase tracking-widest">{item.category}</Badge>
                                     </CardContent>
@@ -799,7 +1167,7 @@ const AdminDashboard = () => {
                                                 <Input className="h-16 rounded-2xl bg-background border-primary/10 font-black uppercase text-primary placeholder:text-primary/20" placeholder="Limited Offer" value={newDeal.discountValue} onChange={(e) => setNewDeal({...newDeal, discountValue: e.target.value})} />
                                             </div>
                                             <div className="space-y-3">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-4">Bundle Price (rs.)</label>
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-4">Bundle Price (Rs.)</label>
                                                 <Input type="number" className="h-16 rounded-2xl bg-background border-primary/10 font-black text-xl italic" placeholder="0.00" required value={newDeal.price} onChange={(e) => setNewDeal({...newDeal, price: e.target.value})} />
                                             </div>
                                         </div>
@@ -846,7 +1214,7 @@ const AdminDashboard = () => {
                                                     <div className="flex justify-between items-end">
                                                         <div>
                                                             <span className="text-[8px] font-black uppercase tracking-widest text-primary mb-1 block">Deal Price</span>
-                                                            <p className="text-2xl font-black tracking-tighter italic leading-none">${deal.price}</p>
+                                                            <p className="text-2xl font-black tracking-tighter italic leading-none">Rs. {deal.price}</p>
                                                         </div>
                                                         <Button 
                                                             variant="ghost"
