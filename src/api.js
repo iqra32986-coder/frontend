@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // Adjust base URL as needed
+  baseURL: 'https://food-court-backend-one.vercel.app/', // Adjust base URL as needed
 });
 
 api.interceptors.request.use((config) => {
